@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S.A.G.E. Identity Lab | Chapter 2</title>
+    <title>S.A.G.E. Identity Lab | Student Assignment Tool</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -13,6 +13,7 @@
             --error: #CF6679;
             --on-bg: #E1E1E1;
             --card-bg: #2C2C2C;
+            --text-muted: #B0B0B0;
         }
 
         body {
@@ -22,7 +23,7 @@
             margin: 0;
             padding: 0;
             line-height: 1.6;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
@@ -30,6 +31,8 @@
         /* --- UTILITIES --- */
         .hidden { display: none !important; }
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; width: 100%; }
+        
+        /* Buttons */
         .btn {
             background-color: var(--primary);
             color: #000;
@@ -38,431 +41,365 @@
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            transition: opacity 0.2s;
+            transition: all 0.2s;
+            font-size: 0.9rem;
         }
-        .btn:hover { opacity: 0.9; }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
         .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
         .btn-secondary { background-color: var(--secondary); color: #000; }
-        
-        /* --- STEP ZERO MODAL --- */
-        #step-zero-modal {
+        .btn-small { padding: 5px 10px; font-size: 0.8rem; }
+        .btn-print { background-color: #444; color: white; float: right; }
+
+        /* --- MODALS --- */
+        .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0,0,0,0.85);
             z-index: 1000;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
-            text-align: center;
         }
-        .bio-meter {
-            width: 300px; height: 20px; background: #333;
-            border-radius: 10px; margin: 20px auto; overflow: hidden;
+        .modal-content {
+            background: var(--surface-color);
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            border: 1px solid #444;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .bio-fill { height: 100%; background: var(--error); width: 20%; transition: width 0.5s, background 0.5s; }
 
-        /* --- DASHBOARD LAYOUT --- */
-        header { background: var(--surface-color); padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        /* --- LAYOUT --- */
+        header { 
+            background: var(--surface-color); padding: 15px 20px; border-bottom: 1px solid #333; 
+            display: flex; justify-content: space-between; align-items: center; 
+        }
         .nav-tabs { display: flex; gap: 10px; }
-        .tab-btn { background: none; border: none; color: #888; padding: 10px; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab-btn { 
+            background: none; border: none; color: #777; padding: 10px 15px; 
+            cursor: pointer; border-bottom: 3px solid transparent; font-weight: bold;
+        }
         .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        
+        /* --- INSTRUCTIONS --- */
+        .instruction-box {
+            background: rgba(3, 218, 198, 0.1);
+            border-left: 4px solid var(--secondary);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+            font-size: 0.95rem;
+        }
 
-        .dashboard-content { flex: 1; overflow-y: auto; padding-top: 20px; }
-
-        /* --- DUAL LENS SCANNER --- */
+        /* --- SCANNER (TAB 1) --- */
         .scanner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        @media(max-width: 768px) { .scanner-grid { grid-template-columns: 1fr; } }
-        
-        .lens-card { background: var(--card-bg); padding: 20px; border-radius: 8px; border-left: 4px solid var(--secondary); }
+        .lens-card { background: var(--card-bg); padding: 20px; border-radius: 8px; border-top: 4px solid #555; }
         .lens-card.aristotelian { border-color: var(--primary); }
+        .lens-card.coherence { border-color: var(--secondary); }
         
-        .slider-group { margin-bottom: 15px; }
-        .slider-group label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px; }
-        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary); }
-
-        .diagnosis-box {
-            background: #222; border: 1px solid #444; padding: 20px;
-            margin-top: 20px; border-radius: 8px; min-height: 100px;
+        .slider-wrapper { margin-bottom: 15px; }
+        .slider-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-muted); }
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary); margin: 0; }
+        
+        .feedback-terminal {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            min-height: 120px;
+            color: var(--secondary);
+            position: relative;
         }
-        .diagnosis-text { font-family: monospace; color: var(--secondary); font-size: 1.1rem; }
-
-        /* --- MANDELA SCALER --- */
-        .scaler-container { background: var(--card-bg); padding: 20px; border-radius: 8px; }
-        .scale-selector { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
-        .scale-option { 
-            border: 1px solid #555; padding: 15px; border-radius: 6px; cursor: pointer; flex: 1; min-width: 200px;
-            transition: background 0.2s;
+        .feedback-terminal::before {
+            content: "SYSTEM DIAGNOSTIC LOG // LISTENING...";
+            position: absolute; top: 5px; left: 10px;
+            font-size: 0.7rem; color: #555;
         }
-        .scale-option:hover, .scale-option.selected { background: #333; border-color: var(--primary); }
-        .scale-arrow { font-size: 2rem; text-align: center; color: #888; margin: 10px 0; }
-        .intervention-output { background: #1a1a1a; padding: 15px; border-radius: 6px; border-left: 4px solid var(--secondary); }
 
-        /* --- ATCF TRACKER --- */
-        .tracker-grid { display: grid; grid-template-columns: 3fr 1fr; gap: 20px; }
-        .chart-placeholder { 
-            height: 200px; display: flex; align-items: flex-end; gap: 10px; 
-            padding: 20px; background: #222; border-radius: 8px; border-bottom: 1px solid #444;
+        /* --- SCALER (TAB 2) --- */
+        .scaler-options { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+        .scaler-card {
+            flex: 1; min-width: 250px;
+            background: var(--card-bg); border: 1px solid #444;
+            padding: 15px; border-radius: 6px; cursor: pointer;
+            transition: all 0.2s;
         }
-        .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
-        .bar { width: 30px; background: var(--secondary); border-radius: 4px 4px 0 0; transition: height 0.5s; }
-        .bar.warning { background: var(--error); }
-        .bar-label { font-size: 0.8rem; color: #888; margin-top: 5px; }
+        .scaler-card:hover { border-color: var(--primary); background: #333; }
+        .scaler-card.selected { border-color: var(--primary); background: rgba(187, 134, 252, 0.1); }
+        
+        .intervention-result {
+            background: #1a1a1a; padding: 20px; border-radius: 6px;
+            border-left: 4px solid var(--secondary); margin-top: 20px;
+        }
 
+        /* --- TRACKER (TAB 3) --- */
+        .tracker-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .chart-container { 
+            height: 250px; background: #222; border-radius: 8px; padding: 20px; 
+            display: flex; align-items: flex-end; gap: 15px; border-bottom: 1px solid #444;
+        }
+        .chart-bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .chart-bar { 
+            width: 40px; background: var(--secondary); 
+            transition: height 0.5s; border-radius: 4px 4px 0 0; 
+            position: relative;
+        }
+        .chart-bar.low { background: var(--error); }
+        .bar-label { margin-top: 10px; font-size: 0.8rem; color: #888; }
+        
+        .log-history { margin-top: 30px; }
+        .log-entry { 
+            background: var(--card-bg); padding: 15px; border-radius: 6px; margin-bottom: 10px;
+            border-left: 3px solid #555;
+        }
+
+        /* --- PRINT STYLES --- */
+        @media print {
+            body { background: white; color: black; }
+            header, .nav-tabs, .btn, .instruction-box, input[type="range"] { display: none !important; }
+            .container { max-width: 100%; margin: 0; padding: 0; }
+            .hidden { display: block !important; } /* Show all tabs for report */
+            
+            /* Clean up cards for print */
+            .lens-card, .feedback-terminal, .intervention-result, .log-entry {
+                border: 1px solid #ccc; background: white; color: black; box-shadow: none; margin-bottom: 20px;
+            }
+            .feedback-terminal { color: black; font-weight: bold; }
+            
+            /* Section Headers */
+            h2 { border-bottom: 2px solid #000; padding-bottom: 5px; margin-top: 30px; }
+            
+            /* Force show all content */
+            #tab-scanner, #tab-scaler, #tab-tracker { display: block !important; page-break-inside: avoid; }
+            
+            /* Hide empty states */
+            #intervention-placeholder { display: none; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="step-zero-modal">
-        <h1 style="color: var(--primary);">STEP ZERO CHECK</h1>
-        <p style="max-width: 600px;">"You cannot develop virtue without biological capacity."<br>Before entering the lab, we must assess your substrate.</p>
-        
-        <div style="text-align: left; background: #222; padding: 20px; border-radius: 8px; margin: 20px;">
-            <p>1. Have you slept 7+ hours at least 3 nights this week?</p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn" onclick="updateBio(10)">Yes</button>
-                <button class="btn btn-outline" onclick="updateBio(-10)">No</button>
-            </div>
+    <div id="log-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Weekly Reflection Log</h2>
+            <p><strong>Primary Question:</strong> "Am I becoming who I want to become?"</p>
             
-            <p>2. On a scale of 1-10, what is your current energy level?</p>
-            <input type="range" min="1" max="10" value="5" oninput="updateBioFromSlider(this.value)">
-        </div>
+            <label style="display:block; margin-bottom:10px;">Your Assessment (0-100%):</label>
+            <input type="range" id="log-score" min="0" max="100" value="50" oninput="document.getElementById('log-val-disp').innerText = this.value + '%'">
+            <div style="text-align: right; color: var(--primary); font-weight: bold;" id="log-val-disp">50%</div>
 
-        <div class="bio-meter"><div class="bio-fill" id="bio-bar"></div></div>
-        <p id="bio-status" style="color: var(--error);">STATUS: CRITICAL (ACCESS DENIED)</p>
-        
-        <div id="enter-btn-container" class="hidden">
-            <button class="btn btn-secondary" onclick="enterLab()">ENTER LAB</button>
-        </div>
-        <div id="recovery-msg" class="hidden">
-            <p>Your BRC (Biological-Regulatory Coherence) is too low for analysis.</p>
-            <p><strong>Prescription:</strong> Close this app. Sleep or walk for 20 mins.</p>
-            <button class="btn btn-outline" onclick="forceEnter()">Override (Not Recommended)</button>
+            <label style="display:block; margin-top:15px; margin-bottom:5px;">Evidence & Substrate Check:</label>
+            <textarea id="log-notes" rows="4" style="width:100%; background:#222; border:1px solid #444; color:white; padding:10px;" placeholder="E.g., I struggled with patience because my sleep (BRC) was poor..."></textarea>
+            
+            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button class="btn" onclick="saveLog()">Save Entry</button>
+            </div>
         </div>
     </div>
 
     <header>
-        <div style="font-weight: bold; font-size: 1.2rem;">S.A.G.E. <span style="color: var(--primary);">IDENTITY LAB</span></div>
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="showTab('scanner')">Dual-Lens Scanner</button>
-            <button class="tab-btn" onclick="showTab('scaler')">Mandela Scaler</button>
-            <button class="tab-btn" onclick="showTab('tracker')">ATCF Tracker</button>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <strong>S.A.G.E. IDENTITY LAB</strong>
+            <span style="font-size: 0.8rem; background: #333; padding: 2px 8px; border-radius: 4px;">Chapter 2 Companion</span>
+        </div>
+        <div>
+            <button class="btn btn-print" onclick="window.print()">🖨️ Generate PDF Report</button>
         </div>
     </header>
 
-    <div class="container dashboard-content">
+    <div class="container">
+        
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('scanner')">1. Diagnostic Scanner</button>
+            <button class="tab-btn" onclick="switchTab('scaler')">2. Intervention Scaler</button>
+            <button class="tab-btn" onclick="switchTab('tracker')">3. Weekly Tracker</button>
+        </div>
 
-        <div id="tab-scanner">
-            <h2>Dual-Lens Diagnostic Protocol</h2>
-            <p style="color: #888;">Use both lenses to diagnose Character Bankruptcy. Adjust sliders to match your current state.</p>
-            
+        <div id="tab-scanner" class="tab-content">
+            <div class="instruction-box">
+                <strong>How to use:</strong> Adjust the sliders on the left (Identity) and right (Substrate) to match your current state. The "System Diagnostic" below will interpret the connection between your biology/structure and your character.
+            </div>
+
             <div class="scanner-grid">
                 <div class="lens-card aristotelian">
-                    <h3 style="color: var(--primary);">LENS 1: ARISTOTELIAN (Identity)</h3>
+                    <h3 style="color: var(--primary); margin-top: 0;">LENS 1: IDENTITY (The "Who")</h3>
                     
-                    <div class="slider-group">
-                        <label><span>Eudaimonia (Trajectory)</span> <span id="val-eud">50%</span></label>
-                        <input type="range" id="sl-eud" oninput="diagnose()" title="Am I becoming who I want to be?">
+                    <div class="slider-wrapper">
+                        <div class="slider-label"><span>Phronesis (Judgment)</span> <span id="val-phr">50%</span></div>
+                        <input type="range" id="sl-phr" oninput="updateDiagnostics()">
                     </div>
-                    <div class="slider-group">
-                        <label><span>Phronesis (Judgment)</span> <span id="val-phr">50%</span></label>
-                        <input type="range" id="sl-phr" oninput="diagnose()" title="Can I discern what is right here?">
+                    <div class="slider-wrapper">
+                        <div class="slider-label"><span>Virtue/Hexis (Reliability)</span> <span id="val-vir">50%</span></div>
+                        <input type="range" id="sl-vir" oninput="updateDiagnostics()">
                     </div>
-                    <div class="slider-group">
-                        <label><span>Virtue/Hexis (Ease)</span> <span id="val-vir">50%</span></label>
-                        <input type="range" id="sl-vir" oninput="diagnose()" title="Is being good getting easier?">
+                    <div class="slider-wrapper">
+                        <div class="slider-label"><span>Mean (Emotional Calibration)</span> <span id="val-mea">50%</span></div>
+                        <input type="range" id="sl-mea" oninput="updateDiagnostics()">
                     </div>
-                    <div class="slider-group">
-                        <label><span>Doctrine of Mean (Calibration)</span> <span id="val-mean">50%</span></label>
-                        <input type="range" id="sl-mean" oninput="diagnose()" title="Is my reaction proportional?">
+                    <div class="slider-wrapper">
+                        <div class="slider-label"><span>Eudaimonia (Trajectory)</span> <span id="val-eud">50%</span></div>
+                        <input type="range" id="sl-eud" oninput="updateDiagnostics()">
                     </div>
                 </div>
 
                 <div class="lens-card coherence">
-                    <h3 style="color: var(--secondary);">LENS 2: COHERENCE (Substrate)</h3>
+                    <h3 style="color: var(--secondary); margin-top: 0;">LENS 2: SUBSTRATE (The "How")</h3>
                     
-                    <div class="slider-group">
-                        <label><span>BRC (Biology/Energy)</span> <span id="val-brc">50%</span></label>
-                        <input type="range" id="sl-brc" oninput="diagnose()">
+                    <div class="slider-wrapper">
+                        <div class="slider-label"><span>CIC (Cognitive Bandwidth)</span> <span id="val-cic">50%</span></div>
+                        <input type="range" id="sl-cic" oninput="updateDiagnostics()">
                     </div>
-                    <div class="slider-group">
-                        <label><span>CIC (Cognitive Bandwidth)</span> <span id="val-cic">50%</span></label>
-                        <input type="range" id="sl-cic" oninput="diagnose()">
+                    <div class="slider-wrapper">
+                        <div class="slider-label"><span>ISC (Institutional Support)</span> <span id="val-isc">50%</span></div>
+                        <input type="range" id="sl-isc" oninput="updateDiagnostics()">
                     </div>
-                    <div class="slider-group">
-                        <label><span>ISC (Institutional Support)</span> <span id="val-isc">50%</span></label>
-                        <input type="range" id="sl-isc" oninput="diagnose()">
+                    <div class="slider-wrapper">
+                        <div class="slider-label"><span>BRC (Biological Energy)</span> <span id="val-brc">50%</span></div>
+                        <input type="range" id="sl-brc" oninput="updateDiagnostics()">
                     </div>
-                    <div class="slider-group">
-                        <label><span>TNC (Time Horizon)</span> <span id="val-tnc">50%</span></label>
-                        <input type="range" id="sl-tnc" oninput="diagnose()">
+                    <div class="slider-wrapper">
+                        <div class="slider-label"><span>TNC (Time Horizon)</span> <span id="val-tnc">50%</span></div>
+                        <input type="range" id="sl-tnc" oninput="updateDiagnostics()">
                     </div>
                 </div>
             </div>
 
-            <div class="diagnosis-box">
-                <h4 style="margin-top: 0; color: #888; text-transform: uppercase;">Integration Diagnosis</h4>
-                <div id="diagnosis-output" class="diagnosis-text">Adjust sliders to run analysis...</div>
+            <div class="feedback-terminal" id="diagnostic-output">
+                Waiting for input data... Move sliders to begin analysis.
             </div>
         </div>
 
-        <div id="tab-scaler" class="hidden">
-            <h2>The "Smallest Viable Intervention" Scaler</h2>
-            <p>Translate heroic principles from Mandela's scale (Total Opposition) to Your Scale (Daily Constraints).</p>
+        <div id="tab-scaler" class="tab-content hidden">
+            <div class="instruction-box">
+                <strong>How to use:</strong> Select a "Heroic Strategy" used by Mandela. The app will translate it into a "Smallest Viable Intervention" for your daily life.
+            </div>
 
-            <div class="scaler-container">
-                <h4>1. Identify the Heroic Strategy</h4>
-                <div class="scale-selector">
-                    <div class="scale-option" onclick="scaleIntervention('uni')">
-                        <strong>Robben Island University</strong>
-                        <p style="font-size: 0.8rem; color: #aaa;">Mandela built an alternative polis inside prison to learn and teach.</p>
-                    </div>
-                    <div class="scale-option" onclick="scaleIntervention('bio')">
-                        <strong>Cell Exercise Routine</strong>
-                        <p style="font-size: 0.8rem; color: #aaa;">Mandela ran in place daily to defend biological capacity.</p>
-                    </div>
-                    <div class="scale-option" onclick="scaleIntervention('vis')">
-                        <strong>Rejecting Release</strong>
-                        <p style="font-size: 0.8rem; color: #aaa;">Mandela refused conditional release to protect his long-term vision.</p>
-                    </div>
+            <div class="scaler-options">
+                <div class="scaler-card" onclick="selectScale('uni')">
+                    <strong>Strategy: The Alternative Polis</strong>
+                    <p style="font-size: 0.85rem; color: #999;">Mandela created "Robben Island University" inside the prison to maintain intellectual life.</p>
                 </div>
-
-                <div class="scale-arrow">↓ SCALING PROTOCOL ↓</div>
-
-                <div id="intervention-result" class="hidden">
-                    <h4>2. Your Smallest Viable Intervention</h4>
-                    <div class="intervention-output">
-                        <h3 id="int-title" style="margin-top: 0; color: var(--primary);"></h3>
-                        <p><strong>The Principle:</strong> <span id="int-principle"></span></p>
-                        <p><strong>Your Daily Scale:</strong> <span id="int-action" style="font-size: 1.2rem; color: var(--on-bg);"></span></p>
-                        <div style="margin-top: 15px; border-top: 1px solid #444; padding-top: 10px; font-size: 0.9rem; color: #888;">
-                            "This is not a compromise. It is the exact same moral principle, applied at your PRF."
-                        </div>
-                    </div>
+                <div class="scaler-card" onclick="selectScale('bio')">
+                    <strong>Strategy: Biological Defense</strong>
+                    <p style="font-size: 0.85rem; color: #999;">Mandela ran in place in his cell daily to prevent physical degradation.</p>
                 </div>
+                <div class="scaler-card" onclick="selectScale('vis')">
+                    <strong>Strategy: Vision Protection</strong>
+                    <p style="font-size: 0.85rem; color: #999;">Mandela rejected conditional release to protect his long-term political vision.</p>
+                </div>
+            </div>
+
+            <div id="intervention-placeholder" style="text-align: center; color: #666; padding: 40px; border: 2px dashed #333; border-radius: 8px;">
+                Select a strategy above to generate your intervention plan.
+            </div>
+
+            <div id="intervention-result" class="intervention-result hidden">
+                <h3 id="int-title" style="margin-top: 0;"></h3>
+                <p><strong>The Principle:</strong> <span id="int-principle"></span></p>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 4px; margin: 15px 0;">
+                    <strong>YOUR DAILY SCALE:</strong><br>
+                    <span id="int-action" style="font-size: 1.1rem; color: var(--on-bg);"></span>
+                </div>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">
+                    <em>Why this works:</em> "This is not a compromise. It is the exact same moral principle, applied at your PRF."
+                </p>
             </div>
         </div>
 
-        <div id="tab-tracker" class="hidden">
-            <h2>ATCF Trajectory Tracker</h2>
-            <p>Question: "Am I becoming who I want to become?" (Weekly Check)</p>
+        <div id="tab-tracker" class="tab-content hidden">
+            <div class="instruction-box">
+                <strong>How to use:</strong> Click "Log This Week" to record your ATCF score. Tracking this over time reveals if you are drifting into Character Bankruptcy.
+            </div>
 
-            <div class="tracker-grid">
-                <div class="chart-placeholder" id="atcf-chart">
+            <div class="tracker-layout">
+                <div>
+                    <div class="chart-container" id="chart-area">
+                        <div style="margin: auto; color: #555;">No Data Yet</div>
                     </div>
-                <div style="background: var(--card-bg); padding: 15px; border-radius: 8px;">
-                    <h4>Current Status</h4>
-                    <div id="status-indicator" style="font-size: 2rem; font-weight: bold; color: var(--secondary);">STABLE</div>
-                    <p style="font-size: 0.8rem; color: #aaa;">Based on last 4 weeks.</p>
-                    <button class="btn btn-outline" style="width: 100%; margin-top: 20px;" onclick="addWeek()">Log This Week</button>
+                </div>
+                <div style="background: var(--card-bg); padding: 20px; border-radius: 8px;">
+                    <h3>Status Console</h3>
+                    <div id="status-readout" style="font-size: 1.5rem; font-weight: bold; color: var(--secondary);">NO DATA</div>
+                    <p style="font-size: 0.85rem; color: #999;">Trajectory Analysis</p>
+                    
+                    <button class="btn" style="width: 100%; margin-top: 20px;" onclick="openLogModal()">+ Log This Week</button>
+                    <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="resetData()">Reset Data</button>
                 </div>
             </div>
-            
-            <div style="margin-top: 20px; padding: 15px; background: rgba(207, 102, 121, 0.1); border: 1px solid var(--error); border-radius: 6px;" id="bankruptcy-alert" class="hidden">
-                <strong style="color: var(--error);">⚠️ RED FLAG: CHARACTER BANKRUPTCY DETECTED</strong>
-                <p>You have answered "No/Uncertain" for 4+ consecutive weeks. Institutional extraction is now damaging your identity structure. Initiate immediate BRC restoration.</p>
-            </div>
+
+            <h3 style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 30px;">Evidence Log History</h3>
+            <div id="log-history-container" class="log-history">
+                </div>
         </div>
 
     </div>
 
     <script>
-        // --- STEP ZERO LOGIC ---
-        let bioScore = 20;
-        
-        function updateBio(amount) {
-            bioScore += amount;
-            renderBio();
-        }
-        function updateBioFromSlider(val) {
-            // map 1-10 to roughly 20-80 base
-            bioScore = (val * 8) + 10; 
-            renderBio();
-        }
+        // --- GLOBAL STATE ---
+        const state = {
+            logs: [],
+            intervention: null
+        };
 
-        function renderBio() {
-            const bar = document.getElementById('bio-bar');
-            const status = document.getElementById('bio-status');
-            const enter = document.getElementById('enter-btn-container');
-            const recov = document.getElementById('recovery-msg');
-
-            // Visual clamping
-            let visualScore = Math.min(100, Math.max(0, bioScore));
-            bar.style.width = visualScore + "%";
-
-            if (bioScore > 60) {
-                bar.style.background = "var(--secondary)";
-                status.innerText = "STATUS: SUFFICIENT (ACCESS GRANTED)";
-                status.style.color = "var(--secondary)";
-                enter.classList.remove('hidden');
-                recov.classList.add('hidden');
-            } else {
-                bar.style.background = "var(--error)";
-                status.innerText = "STATUS: CRITICAL (ACCESS DENIED)";
-                status.style.color = "var(--error)";
-                enter.classList.add('hidden');
-                recov.classList.remove('hidden');
-            }
-        }
-
-        function enterLab() {
-            document.getElementById('step-zero-modal').style.display = 'none';
-        }
-        function forceEnter() {
-            if(confirm("Warning: Proceeding without biological capacity will compromise your analysis. Do you accept the risk?")) {
-                enterLab();
-            }
-        }
-
-        // --- TABS LOGIC ---
-        function showTab(tabId) {
-            document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
+        // --- NAVIGATION ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
             
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
         }
 
-        // --- SCANNER LOGIC ---
-        function diagnose() {
-            // Get Aristotelian vals
+        // --- TAB 1: DIAGNOSTIC LOGIC ---
+        function updateDiagnostics() {
+            // Get inputs
+            const phronesis = parseInt(document.getElementById('sl-phr').value);
+            const virtue = parseInt(document.getElementById('sl-vir').value);
+            const mean = parseInt(document.getElementById('sl-mea').value);
             const eud = parseInt(document.getElementById('sl-eud').value);
-            const phr = parseInt(document.getElementById('sl-phr').value);
-            const vir = parseInt(document.getElementById('sl-vir').value);
-            const mean = parseInt(document.getElementById('sl-mean').value);
 
-            // Get Coherence vals
-            const brc = parseInt(document.getElementById('sl-brc').value);
             const cic = parseInt(document.getElementById('sl-cic').value);
             const isc = parseInt(document.getElementById('sl-isc').value);
+            const brc = parseInt(document.getElementById('sl-brc').value);
             const tnc = parseInt(document.getElementById('sl-tnc').value);
 
-            // Update UI numbers
+            // Update Labels
+            document.getElementById('val-phr').innerText = phronesis + "%";
+            document.getElementById('val-vir').innerText = virtue + "%";
+            document.getElementById('val-mea').innerText = mean + "%";
             document.getElementById('val-eud').innerText = eud + "%";
-            document.getElementById('val-phr').innerText = phr + "%";
-            document.getElementById('val-vir').innerText = vir + "%";
-            document.getElementById('val-mean').innerText = mean + "%";
             
-            document.getElementById('val-brc').innerText = brc + "%";
             document.getElementById('val-cic').innerText = cic + "%";
             document.getElementById('val-isc').innerText = isc + "%";
+            document.getElementById('val-brc').innerText = brc + "%";
             document.getElementById('val-tnc').innerText = tnc + "%";
 
-            // LOGIC ENGINE (Based on Text)
-            let diagnoses = [];
+            // INTELLIGENT FEEDBACK GENERATOR
+            let messages = [];
 
-            // 1. Phronesis vs CIC
-            if (phr < 40 && cic < 40) {
-                diagnoses.push("• <strong>Judgment Collapse:</strong> Your Phronesis is failing because Cognitive Bandwidth (CIC) is overloaded. You are defaulting to scripts due to lack of mental space.");
+            // 1. Phronesis (Judgment) relies on CIC (Bandwidth)
+            if (phronesis < 40 && cic < 40) {
+                messages.push(">> ALERT: JUDGMENT COLLAPSE DETECTED.");
+                messages.push("   Mechanism: Low Cognitive Bandwidth (CIC) is preventing Practical Wisdom.");
+                messages.push("   Result: You are defaulting to scripts because you lack the mental space to think.");
             }
-            // 2. Mean vs BRC
+
+            // 2. Mean (Emotion) relies on BRC (Biology)
             if (mean < 40 && brc < 40) {
-                diagnoses.push("• <strong>Dysregulation:</strong> You cannot hit the 'Mean' because your Biological Regulation (BRC) is depleted. Emotional calibration is physically impossible right now.");
+                messages.push(">> ALERT: DYSREGULATION DETECTED.");
+                messages.push("   Mechanism: Biological depletion (BRC) prevents calibration.");
+                messages.push("   Result: You cannot 'hit the mean' while exhausted. Emotional responses will be excessive or deficient.");
             }
-            // 3. Eudaimonia vs TNC
+
+            // 3. Virtue relies on ISC (Institution)
+            if (virtue < 40 && isc < 40) {
+                messages.push(">> ALERT: THERMODYNAMIC THEFT DETECTED.");
+                messages.push("   Mechanism: Institutional Extraction (ISC) is preventing Habituation.");
+                messages.push("   Result: The environment punishes the very virtues you are trying to cultivate.");
+            }
+
+            // 4. Eudaimonia relies on TNC (Time)
             if (eud < 40 && tnc < 40) {
-                diagnoses.push("• <strong>Vision Loss:</strong> You cannot answer 'Who am I becoming?' because your Time Horizon (TNC) has collapsed to survival mode.");
-            }
-            // 4. Virtue vs ISC
-            if (vir < 40 && isc < 40) {
-                diagnoses.push("• <strong>Virtue Punishment:</strong> Habituation is failing because your Institution (ISC) is extracting capacity or punishing excellence.");
-            }
-
-            // Default
-            if (diagnoses.length === 0) {
-                if (brc > 80 && isc > 80) diagnoses.push("• Systems Nominal. Your substrate supports character development.");
-                else diagnoses.push("• Adjust sliders to reflect your current reality to see connections.");
-            }
-
-            document.getElementById('diagnosis-output').innerHTML = diagnoses.join("<br><br>");
-        }
-
-        // --- SCALER LOGIC ---
-        function scaleIntervention(type) {
-            const container = document.getElementById('intervention-result');
-            const title = document.getElementById('int-title');
-            const principle = document.getElementById('int-principle');
-            const action = document.getElementById('int-action');
-            
-            // Remove selected class from all
-            document.querySelectorAll('.scale-option').forEach(el => el.classList.remove('selected'));
-            event.currentTarget.classList.add('selected');
-
-            container.classList.remove('hidden');
-
-            if (type === 'uni') {
-                title.innerText = "ISC ALTERNATIVE";
-                principle.innerText = "Build an alternative community inside the extractive institution.";
-                action.innerText = "Schedule a weekly 30-min coffee with ONE colleague who shares your values. Do not discuss metrics.";
-            } else if (type === 'bio') {
-                title.innerText = "BRC RESTORATION";
-                principle.innerText = "Defend basic biological capacity against institutional depletion.";
-                action.innerText = "Protect 8 hours of sleep for 3 nights this week. This is your 'running in the cell'.";
-            } else if (type === 'vis') {
-                title.innerText = "TNC PROTECTION";
-                principle.innerText = "Maintain a planning horizon beyond immediate survival.";
-                action.innerText = "Set ONE meaningful goal for this semester that you will complete regardless of workload.";
-            }
-        }
-
-        // --- TRACKER LOGIC ---
-        // Simulated data
-        let weeks = [80, 75, 60, 40, 30]; 
-
-        function renderChart() {
-            const container = document.getElementById('atcf-chart');
-            container.innerHTML = '';
-            
-            let consecutiveLow = 0;
-
-            weeks.forEach((val, index) => {
-                const col = document.createElement('div');
-                col.className = 'bar-col';
-                
-                const bar = document.createElement('div');
-                bar.className = 'bar';
-                bar.style.height = val + "%";
-                
-                // Color coding
-                if (val < 50) {
-                    bar.classList.add('warning');
-                    consecutiveLow++;
-                } else {
-                    consecutiveLow = 0; // reset if we have a good week
-                }
-
-                const label = document.createElement('div');
-                label.className = 'bar-label';
-                label.innerText = "W" + (index + 1);
-
-                col.appendChild(bar);
-                col.appendChild(label);
-                container.appendChild(col);
-            });
-
-            // Check bankruptcy
-            const alertBox = document.getElementById('bankruptcy-alert');
-            const statusBox = document.getElementById('status-indicator');
-            
-            if (consecutiveLow >= 4 || (weeks.length >= 4 && weeks.slice(-4).every(v => v < 50))) {
-                alertBox.classList.remove('hidden');
-                statusBox.innerText = "BANKRUPTCY";
-                statusBox.style.color = "var(--error)";
-            } else {
-                alertBox.classList.add('hidden');
-                statusBox.innerText = "STABLE";
-                statusBox.style.color = "var(--secondary)";
-            }
-        }
-
-        function addWeek() {
-            // Random simulation for demo
-            weeks.push(Math.floor(Math.random() * 60) + 20);
-            renderChart();
-        }
-
-        // Init
-        renderChart();
-        renderBio(); // Init bio bar
-    </script>
-</body>
-</html>
+                messages.push(">> ALERT: HORIZON
